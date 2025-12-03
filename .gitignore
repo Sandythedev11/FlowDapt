@@ -5,18 +5,20 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
-# Environment Variables
+# Lock files (keep in repo for consistency)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Environment Variables (NEVER COMMIT)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.example
 *.env
+!.env.example
 
 # Build outputs
 dist/
@@ -199,15 +201,12 @@ cache/
 .monitoring/
 .lighthouse/
 
-# Documentation artifacts (keep only essential docs)
-*.md
-!README.md
-!LICENSE
-
 # Development artifacts
 TODO.txt
 NOTES.txt
 .scratch/
+*.draft
+*.wip
 
 # Session files
 sessions/

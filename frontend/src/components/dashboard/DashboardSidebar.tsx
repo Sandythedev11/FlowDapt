@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -25,6 +26,7 @@ const menuItems = [
 ];
 
 const bottomItems = [
+  { icon: MessageSquare, label: "Feedback", path: "/dashboard/feedback" },
   { icon: Settings, label: "Settings", path: "/dashboard/settings", shortcut: SHORTCUTS.SETTINGS.label },
 ];
 

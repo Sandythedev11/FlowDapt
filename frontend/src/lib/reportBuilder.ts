@@ -153,74 +153,522 @@ export const getReportChartCount = (): number => {
 // Generate PDF HTML content with options
 export const generateReportHTML = (report: ReportData, options?: ReportOptions): string => {
   const now = new Date().toLocaleString();
+  const currentYear = new Date().getFullYear();
   const { includeInsights = false, includeAIChat = false, aiChatMessages = [], allInsights = [], quickStats = null } = options || {};
+  
+  // FlowDapt logo SVG (base64 encoded for embedding)
+  const flowdaptLogo = `data:image/svg+xml;base64,${btoa(`<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="120" rx="24" fill="url(#grad)"/><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1"/><stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1"/></linearGradient></defs><path d="M30 45 L50 45 L50 75 L30 75 Z M55 30 L75 30 L75 75 L55 75 Z M80 50 L90 50 L90 75 L80 75 Z" fill="white"/></svg>`)}`;
   
   let html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>FlowDapt Analytics Report - ${report.fileName}</title>
+  <title>FlowDapt Data Analysis Report - ${report.fileName}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; line-height: 1.6; }
-    .page { padding: 40px; max-width: 900px; margin: 0 auto; }
-    .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #3b82f6; }
-    .header h1 { color: #3b82f6; font-size: 28px; margin-bottom: 8px; }
-    .header .subtitle { color: #64748b; font-size: 14px; }
-    .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 30px; }
-    .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-    .meta-item { text-align: center; }
-    .meta-label { font-size: 12px; color: #64748b; text-transform: uppercase; }
-    .meta-value { font-size: 18px; font-weight: 600; color: #1e293b; }
-    .chart-section { margin-bottom: 50px; page-break-inside: avoid; }
-    .chart-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
-    .chart-number { background: #3b82f6; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; }
-    .chart-title { font-size: 20px; font-weight: 600; color: #1e293b; }
-    .chart-subtitle { font-size: 13px; color: #64748b; }
-    .chart-image { text-align: center; background: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0; }
-    .chart-image img { max-width: 100%; height: auto; border-radius: 4px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
-    .stat-box { background: #f1f5f9; padding: 15px; border-radius: 8px; text-align: center; }
-    .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; }
-    .stat-value { font-size: 18px; font-weight: 700; color: #1e293b; }
-    .insights-section { margin: 20px 0; }
-    .insights-title { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .insight-card { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 12px 15px; margin-bottom: 10px; border-radius: 0 8px 8px 0; }
-    .insight-card-title { font-weight: 600; color: #166534; font-size: 14px; }
-    .insight-card-desc { color: #15803d; font-size: 13px; margin-top: 4px; }
-    .correlations-section { margin: 20px 0; }
-    .correlation-item { display: inline-block; background: #eff6ff; padding: 8px 12px; border-radius: 6px; margin: 4px; font-size: 13px; }
-    .correlation-strong { background: #dcfce7; color: #166534; }
-    .correlation-moderate { background: #fef3c7; color: #92400e; }
-    .kpi-section { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 25px; border-radius: 12px; margin: 30px 0; }
-    .kpi-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    .kpi-item { text-align: center; }
-    .kpi-value { font-size: 28px; font-weight: 700; }
-    .kpi-label { font-size: 12px; opacity: 0.9; }
-    .footer { text-align: center; padding: 30px 0; border-top: 1px solid #e2e8f0; margin-top: 40px; color: #64748b; font-size: 12px; }
-    .section-divider { margin: 40px 0; border-top: 2px solid #e2e8f0; }
-    .all-insights-section { margin: 30px 0; page-break-inside: avoid; }
-    .all-insights-header { font-size: 22px; font-weight: 600; color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-    .ai-chat-section { margin: 30px 0; page-break-inside: avoid; }
-    .ai-chat-header { font-size: 22px; font-weight: 600; color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-    .chat-message { margin-bottom: 15px; }
-    .chat-user { background: #3b82f6; color: white; padding: 12px 16px; border-radius: 12px 12px 4px 12px; margin-left: 40px; }
-    .chat-assistant { background: #f1f5f9; color: #1e293b; padding: 12px 16px; border-radius: 12px 12px 12px 4px; margin-right: 40px; }
-    .chat-label { font-size: 11px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-    .quick-stats-section { margin: 30px 0; page-break-inside: avoid; }
-    .quick-stats-header { font-size: 22px; font-weight: 600; color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-    .quick-stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-    .quick-stat-box { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 15px 10px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
-    .quick-stat-value { font-size: 20px; font-weight: 700; color: #3b82f6; }
-    .quick-stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 4px; }
-    @media print { .page { padding: 20px; } .chart-section { page-break-inside: avoid; } }
+    body { 
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
+      color: #1e293b; 
+      line-height: 1.7; 
+      background: #ffffff;
+      position: relative;
+    }
+    
+    /* Watermark */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      opacity: 0.03;
+      z-index: -1;
+      pointer-events: none;
+      font-size: 120px;
+      font-weight: 900;
+      color: #3b82f6;
+      white-space: nowrap;
+    }
+    
+    /* Page structure */
+    .page { 
+      padding: 60px 50px 80px 50px; 
+      max-width: 1000px; 
+      margin: 0 auto; 
+      position: relative;
+      min-height: 100vh;
+    }
+    
+    /* Cover Page */
+    .cover-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 80px 50px;
+      page-break-after: always;
+    }
+    .cover-logo {
+      width: 180px;
+      height: 180px;
+      margin-bottom: 50px;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,0.3));
+    }
+    .cover-title {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+    }
+    .cover-subtitle {
+      font-size: 24px;
+      font-weight: 300;
+      margin-bottom: 60px;
+      opacity: 0.95;
+    }
+    .cover-meta {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      padding: 30px 50px;
+      border-radius: 16px;
+      margin-top: 40px;
+    }
+    .cover-meta-item {
+      font-size: 18px;
+      margin: 12px 0;
+      opacity: 0.95;
+    }
+    .cover-meta-label {
+      font-weight: 600;
+      margin-right: 10px;
+    }
+    
+    /* Page footer with page numbers */
+    .page-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: linear-gradient(to top, rgba(248,250,252,0.95), transparent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 50px;
+      font-size: 11px;
+      color: #64748b;
+      z-index: 10;
+    }
+    .page-footer-left {
+      font-weight: 500;
+    }
+    .page-footer-right {
+      font-weight: 600;
+    }
+    
+    /* Content sections */
+    .header { 
+      text-align: center; 
+      margin-bottom: 50px; 
+      padding-bottom: 30px; 
+      border-bottom: 4px solid #3b82f6; 
+    }
+    .header h1 { 
+      color: #3b82f6; 
+      font-size: 36px; 
+      margin-bottom: 12px; 
+      font-weight: 700;
+    }
+    .header .subtitle { 
+      color: #64748b; 
+      font-size: 16px; 
+      font-weight: 400;
+    }
+    
+    .meta-box { 
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
+      border: 2px solid #e2e8f0; 
+      border-radius: 12px; 
+      padding: 35px; 
+      margin-bottom: 50px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .meta-grid { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 25px; 
+    }
+    .meta-item { 
+      text-align: center; 
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+    }
+    .meta-label { 
+      font-size: 13px; 
+      color: #64748b; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .meta-value { 
+      font-size: 24px; 
+      font-weight: 700; 
+      color: #1e293b; 
+      margin-top: 8px;
+    }
+    
+    /* Chart sections with increased spacing */
+    .chart-section { 
+      margin-bottom: 70px; 
+      padding: 35px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      page-break-inside: avoid; 
+    }
+    .chart-header { 
+      display: flex; 
+      align-items: center; 
+      gap: 15px; 
+      margin-bottom: 25px; 
+      padding-bottom: 20px; 
+      border-bottom: 3px solid #e2e8f0; 
+    }
+    .chart-number { 
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); 
+      color: white; 
+      width: 42px; 
+      height: 42px; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: 700; 
+      font-size: 18px;
+      box-shadow: 0 4px 6px rgba(59,130,246,0.3);
+    }
+    .chart-title { 
+      font-size: 24px; 
+      font-weight: 700; 
+      color: #1e293b; 
+    }
+    .chart-subtitle { 
+      font-size: 14px; 
+      color: #64748b; 
+      margin-top: 4px;
+    }
+    
+    /* Charts increased by 15% */
+    .chart-image { 
+      text-align: center; 
+      background: #f8fafc; 
+      border-radius: 12px; 
+      padding: 35px; 
+      margin: 30px 0; 
+      border: 1px solid #e2e8f0;
+    }
+    .chart-image img { 
+      max-width: 100%; 
+      height: auto; 
+      border-radius: 8px;
+      transform: scale(1.15);
+      transform-origin: center;
+    }
+    
+    /* Stats with better spacing */
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 18px; 
+      margin: 30px 0; 
+    }
+    .stat-box { 
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); 
+      padding: 22px; 
+      border-radius: 10px; 
+      text-align: center;
+      border: 1px solid #cbd5e1;
+    }
+    .stat-label { 
+      font-size: 12px; 
+      color: #64748b; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .stat-value { 
+      font-size: 22px; 
+      font-weight: 800; 
+      color: #1e293b; 
+      margin-top: 8px;
+    }
+    
+    /* Insights with spacing */
+    .insights-section { 
+      margin: 30px 0; 
+      padding: 25px;
+      background: #f0fdf4;
+      border-radius: 10px;
+    }
+    .insights-title { 
+      font-size: 18px; 
+      font-weight: 700; 
+      color: #1e293b; 
+      margin-bottom: 18px; 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+    }
+    .insight-card { 
+      background: white; 
+      border-left: 5px solid #22c55e; 
+      padding: 18px 20px; 
+      margin-bottom: 15px; 
+      border-radius: 0 10px 10px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .insight-card-title { 
+      font-weight: 700; 
+      color: #166534; 
+      font-size: 15px; 
+    }
+    .insight-card-desc { 
+      color: #15803d; 
+      font-size: 14px; 
+      margin-top: 6px; 
+      line-height: 1.6;
+    }
+    
+    /* Correlations */
+    .correlations-section { 
+      margin: 30px 0; 
+      padding: 25px;
+      background: #eff6ff;
+      border-radius: 10px;
+    }
+    .correlation-item { 
+      display: inline-block; 
+      background: white; 
+      padding: 12px 18px; 
+      border-radius: 8px; 
+      margin: 6px; 
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .correlation-strong { 
+      background: #dcfce7; 
+      color: #166534; 
+      border: 2px solid #22c55e;
+    }
+    .correlation-moderate { 
+      background: #fef3c7; 
+      color: #92400e; 
+      border: 2px solid #fbbf24;
+    }
+    
+    /* KPI section */
+    .kpi-section { 
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); 
+      color: white; 
+      padding: 40px; 
+      border-radius: 16px; 
+      margin: 50px 0;
+      box-shadow: 0 10px 30px rgba(59,130,246,0.3);
+    }
+    .kpi-title { 
+      font-size: 24px; 
+      font-weight: 700; 
+      margin-bottom: 25px; 
+    }
+    .kpi-grid { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 30px; 
+    }
+    .kpi-item { 
+      text-align: center; 
+      padding: 20px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+    }
+    .kpi-value { 
+      font-size: 36px; 
+      font-weight: 800; 
+    }
+    .kpi-label { 
+      font-size: 14px; 
+      opacity: 0.95; 
+      margin-top: 8px;
+    }
+    
+    /* Section dividers */
+    .section-divider { 
+      margin: 60px 0; 
+      border-top: 3px solid #e2e8f0; 
+    }
+    
+    /* All insights section */
+    .all-insights-section { 
+      margin: 50px 0; 
+      padding: 35px;
+      background: #f0fdf4;
+      border-radius: 12px;
+      page-break-inside: avoid; 
+    }
+    .all-insights-header { 
+      font-size: 28px; 
+      font-weight: 700; 
+      color: #1e293b; 
+      margin-bottom: 30px; 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+    }
+    
+    /* AI Chat section */
+    .ai-chat-section { 
+      margin: 50px 0; 
+      padding: 35px;
+      background: #eff6ff;
+      border-radius: 12px;
+      page-break-inside: avoid; 
+    }
+    .ai-chat-header { 
+      font-size: 28px; 
+      font-weight: 700; 
+      color: #1e293b; 
+      margin-bottom: 30px; 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+    }
+    .chat-message { 
+      margin-bottom: 20px; 
+    }
+    .chat-user { 
+      background: #3b82f6; 
+      color: white; 
+      padding: 16px 20px; 
+      border-radius: 16px 16px 4px 16px; 
+      margin-left: 50px;
+      box-shadow: 0 4px 6px rgba(59,130,246,0.2);
+    }
+    .chat-assistant { 
+      background: white; 
+      color: #1e293b; 
+      padding: 16px 20px; 
+      border-radius: 16px 16px 16px 4px; 
+      margin-right: 50px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .chat-label { 
+      font-size: 12px; 
+      color: #64748b; 
+      margin-bottom: 6px; 
+      text-transform: uppercase; 
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Quick stats */
+    .quick-stats-section { 
+      margin: 50px 0; 
+      padding: 35px;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+      page-break-inside: avoid; 
+    }
+    .quick-stats-header { 
+      font-size: 28px; 
+      font-weight: 700; 
+      color: #1e293b; 
+      margin-bottom: 30px; 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+    }
+    .quick-stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(7, 1fr); 
+      gap: 15px; 
+    }
+    .quick-stat-box { 
+      background: white; 
+      padding: 20px 12px; 
+      border-radius: 10px; 
+      text-align: center; 
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    .quick-stat-value { 
+      font-size: 24px; 
+      font-weight: 800; 
+      color: #3b82f6; 
+    }
+    .quick-stat-label { 
+      font-size: 11px; 
+      color: #64748b; 
+      text-transform: uppercase; 
+      margin-top: 6px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    
+    @media print { 
+      .page { padding: 40px 30px 70px 30px; } 
+      .chart-section { page-break-inside: avoid; }
+      .page-footer { position: fixed; }
+    }
   </style>
 </head>
 <body>
+  <!-- Watermark -->
+  <div class="watermark">FLOWDAPT</div>
+  
+  <!-- Page Footer (appears on all pages) -->
+  <div class="page-footer">
+    <div class="page-footer-left">Generated by FlowDapt Analytics Engine — ${currentYear}</div>
+    <div class="page-footer-right">Page <span class="page-number"></span></div>
+  </div>
+  
+  <!-- Cover Page -->
+  <div class="cover-page">
+    <img src="${flowdaptLogo}" alt="FlowDapt Logo" class="cover-logo" />
+    <h1 class="cover-title">FlowDapt Data Analysis Report</h1>
+    <p class="cover-subtitle">Comprehensive Analytics & Insights</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Report Generated:</span>
+        <span>${now}</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Data Source:</span>
+        <span>${report.fileName}</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Total Records:</span>
+        <span>${report.totalRows.toLocaleString()}</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">Charts Included:</span>
+        <span>${report.charts.length}</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
   <div class="page">
     <div class="header">
-      <h1>📊 FlowDapt Analytics Report</h1>
+      <h1>📊 Analytics Report</h1>
       <p class="subtitle">Comprehensive Data Analysis & Visualization Report</p>
     </div>
 
@@ -412,11 +860,17 @@ export const generateReportHTML = (report: ReportData, options?: ReportOptions):
   }
 
   html += `
-    <div class="footer">
-      <p>Report generated by FlowDapt Analytics Platform</p>
-      <p>Generated on: ${now}</p>
-    </div>
   </div>
+  
+  <script>
+    // Add page numbers dynamically
+    window.onload = function() {
+      const pageNumbers = document.querySelectorAll('.page-number');
+      pageNumbers.forEach((el, index) => {
+        el.textContent = index + 1;
+      });
+    };
+  </script>
 </body>
 </html>`;
 

@@ -21,6 +21,7 @@ import UploadData from "./pages/dashboard/UploadData";
 import VisualAnalytics from "./pages/dashboard/VisualAnalytics";
 import Insights from "./pages/dashboard/Insights";
 import ReportBuilder from "./pages/dashboard/ReportBuilder";
+import Feedback from "./pages/dashboard/Feedback";
 import Settings from "./pages/dashboard/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +56,7 @@ const App = () => {
             <Route path="/dashboard/analytics" element={<VisualAnalytics />} />
             <Route path="/dashboard/insights" element={<Insights />} />
             <Route path="/dashboard/report" element={<ReportBuilder />} />
+            <Route path="/dashboard/feedback" element={<Feedback />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

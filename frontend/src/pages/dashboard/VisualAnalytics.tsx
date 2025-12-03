@@ -654,26 +654,44 @@ const VisualAnalytics = () => {
   // Render Bar Chart
   const renderBarChart = () => {
     if (!analysisData?.data?.length) return renderEmptyState();
+    const chartData = getChartData();
+    const dataCount = chartData.length;
+    
+    // Smart tick interval based on data count
+    const interval = dataCount > 20 ? Math.floor(dataCount / 10) : dataCount > 10 ? 1 : 0;
+    
     return (
-      <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={getChartData()} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+      <ResponsiveContainer width="100%" height={450}>
+        <BarChart data={chartData} margin={{ top: 20, right: 40, left: 60, bottom: 100 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis 
             dataKey={selectedXField} 
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
             angle={-45}
             textAnchor="end"
-            height={80}
+            height={90}
+            interval={interval}
+            tickFormatter={(value) => {
+              const str = String(value);
+              return str.length > 15 ? str.substring(0, 12) + '...' : str;
+            }}
           />
-          <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+          <YAxis 
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            width={50}
+          />
           <Tooltip 
             contentStyle={{ 
               backgroundColor: "hsl(var(--card))", 
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px"
-            }} 
+            }}
+            formatter={(value: any) => [Number(value).toLocaleString(), selectedYField]}
           />
-          <Legend />
+          <Legend 
+            wrapperStyle={{ paddingTop: "20px" }}
+            iconType="rect"
+          />
           <Bar dataKey={selectedYField} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
@@ -683,26 +701,44 @@ const VisualAnalytics = () => {
   // Render Line Chart
   const renderLineChart = () => {
     if (!analysisData?.data?.length) return renderEmptyState();
+    const chartData = getChartData();
+    const dataCount = chartData.length;
+    
+    // Smart tick interval based on data count
+    const interval = dataCount > 20 ? Math.floor(dataCount / 10) : dataCount > 10 ? 1 : 0;
+    
     return (
-      <ResponsiveContainer width="100%" height={350}>
-        <LineChart data={getChartData()} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+      <ResponsiveContainer width="100%" height={450}>
+        <LineChart data={chartData} margin={{ top: 20, right: 40, left: 60, bottom: 100 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis 
             dataKey={selectedXField} 
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
             angle={-45}
             textAnchor="end"
-            height={80}
+            height={90}
+            interval={interval}
+            tickFormatter={(value) => {
+              const str = String(value);
+              return str.length > 15 ? str.substring(0, 12) + '...' : str;
+            }}
           />
-          <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+          <YAxis 
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            width={50}
+          />
           <Tooltip 
             contentStyle={{ 
               backgroundColor: "hsl(var(--card))", 
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px"
-            }} 
+            }}
+            formatter={(value: any) => [Number(value).toLocaleString(), selectedYField]}
           />
-          <Legend />
+          <Legend 
+            wrapperStyle={{ paddingTop: "20px" }}
+            iconType="line"
+          />
           <Line 
             type="monotone" 
             dataKey={selectedYField} 
@@ -720,16 +756,40 @@ const VisualAnalytics = () => {
   const renderPieChart = () => {
     const pieData = getPieData();
     if (!pieData.length) return renderEmptyState();
+    
+    // Custom label with truncation
+    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+      const RADIAN = Math.PI / 180;
+      const radius = outerRadius + 25;
+      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+      
+      if (percent < 0.05) return null; // Hide labels for slices < 5%
+      
+      return (
+        <text 
+          x={x} 
+          y={y} 
+          fill="hsl(var(--foreground))" 
+          textAnchor={x > cx ? 'start' : 'end'} 
+          dominantBaseline="central"
+          fontSize={11}
+        >
+          {`${(percent * 100).toFixed(0)}%`}
+        </text>
+      );
+    };
+    
     return (
-      <ResponsiveContainer width="100%" height={350}>
-        <PieChart>
+      <ResponsiveContainer width="100%" height={450}>
+        <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
           <Pie
             data={pieData}
             cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-            outerRadius={120}
+            cy="45%"
+            labelLine={{ stroke: "hsl(var(--border))", strokeWidth: 1 }}
+            label={renderCustomLabel}
+            outerRadius={110}
             fill="#8884d8"
             dataKey="value"
           >
@@ -742,9 +802,18 @@ const VisualAnalytics = () => {
               backgroundColor: "hsl(var(--card))", 
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px"
-            }} 
+            }}
+            formatter={(value: any) => [Number(value).toLocaleString(), selectedYField]}
           />
-          <Legend />
+          <Legend 
+            verticalAlign="bottom" 
+            height={60}
+            wrapperStyle={{ paddingTop: "20px" }}
+            formatter={(value) => {
+              const str = String(value);
+              return str.length > 20 ? str.substring(0, 17) + '...' : str;
+            }}
+          />
         </PieChart>
       </ResponsiveContainer>
     );
@@ -758,20 +827,35 @@ const VisualAnalytics = () => {
       y: Number(row[selectedYField]) || 0,
     }));
     return (
-      <ResponsiveContainer width="100%" height={350}>
-        <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+      <ResponsiveContainer width="100%" height={450}>
+        <ScatterChart margin={{ top: 20, right: 40, left: 60, bottom: 60 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis 
             type="number" 
             dataKey="x" 
             name={selectedXField}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            label={{ 
+              value: selectedXField, 
+              position: 'insideBottom', 
+              offset: -10,
+              style: { fill: "hsl(var(--muted-foreground))", fontSize: 12 }
+            }}
+            tickFormatter={(value) => Number(value).toLocaleString()}
           />
           <YAxis 
             type="number" 
             dataKey="y" 
             name={selectedYField}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            width={50}
+            label={{ 
+              value: selectedYField, 
+              angle: -90, 
+              position: 'insideLeft',
+              style: { fill: "hsl(var(--muted-foreground))", fontSize: 12 }
+            }}
+            tickFormatter={(value) => Number(value).toLocaleString()}
           />
           <Tooltip 
             cursor={{ strokeDasharray: "3 3" }}
@@ -779,7 +863,11 @@ const VisualAnalytics = () => {
               backgroundColor: "hsl(var(--card))", 
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px"
-            }} 
+            }}
+            formatter={(value: any, name: string) => [Number(value).toLocaleString(), name]}
+          />
+          <Legend 
+            wrapperStyle={{ paddingTop: "10px" }}
           />
           <Scatter name="Data Points" data={scatterData} fill="hsl(var(--primary))" />
         </ScatterChart>
@@ -862,25 +950,41 @@ const VisualAnalytics = () => {
     };
 
     return (
-      <div className="overflow-x-auto">
-        <div className="min-w-fit p-4">
-          <div className="flex">
-            <div className="w-24" />
+      <div className="overflow-x-auto py-4">
+        <div className="min-w-fit px-4">
+          {/* Column Headers */}
+          <div className="flex mb-2">
+            <div className="w-32 flex-shrink-0" />
             {numericCols.map(col => (
-              <div key={col} className="w-20 text-xs font-medium text-center truncate px-1">
-                {col.substring(0, 10)}
+              <div 
+                key={col} 
+                className="w-24 text-xs font-medium text-center px-2"
+                title={col}
+              >
+                <div className="truncate">
+                  {col.length > 12 ? col.substring(0, 10) + '..' : col}
+                </div>
               </div>
             ))}
           </div>
+          
+          {/* Correlation Matrix */}
           {numericCols.map(row => (
-            <div key={row} className="flex items-center">
-              <div className="w-24 text-xs font-medium truncate pr-2">{row.substring(0, 12)}</div>
+            <div key={row} className="flex items-center mb-1">
+              <div 
+                className="w-32 text-xs font-medium pr-3 flex-shrink-0 text-right"
+                title={row}
+              >
+                <div className="truncate">
+                  {row.length > 14 ? row.substring(0, 12) + '..' : row}
+                </div>
+              </div>
               {numericCols.map(col => {
                 const value = correlationMatrix[row]?.[col] ?? 0;
                 return (
                   <div
                     key={`${row}-${col}`}
-                    className={`w-20 h-12 flex items-center justify-center text-xs font-medium rounded m-0.5 transition-all hover:scale-105 ${getColor(value)} ${Math.abs(value) > 0.5 ? "text-white" : "text-gray-800 dark:text-gray-200"}`}
+                    className={`w-24 h-14 flex items-center justify-center text-xs font-semibold rounded mx-0.5 transition-all hover:scale-105 cursor-pointer ${getColor(value)} ${Math.abs(value) > 0.5 ? "text-white" : "text-gray-800 dark:text-gray-200"}`}
                     title={`${row} ↔ ${col}: ${(value * 100).toFixed(1)}%`}
                   >
                     {(value * 100).toFixed(0)}%
@@ -889,10 +993,21 @@ const VisualAnalytics = () => {
               })}
             </div>
           ))}
-          <div className="flex items-center justify-center gap-4 mt-4 text-xs">
-            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-red-500 rounded" /> Strong -</div>
-            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-gray-400 rounded" /> Neutral</div>
-            <div className="flex items-center gap-1"><div className="w-4 h-4 bg-green-500 rounded" /> Strong +</div>
+          
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6 mt-6 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-red-500 rounded shadow-sm" />
+              <span className="font-medium">Strong Negative</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-gray-400 rounded shadow-sm" />
+              <span className="font-medium">Neutral</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-green-500 rounded shadow-sm" />
+              <span className="font-medium">Strong Positive</span>
+            </div>
           </div>
         </div>
       </div>
@@ -918,7 +1033,7 @@ const VisualAnalytics = () => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([name, value], index) => ({
-        name,
+        name: name.length > 20 ? name.substring(0, 17) + '...' : name,
         value,
         fill: COLORS[index % COLORS.length],
       }));
@@ -935,17 +1050,24 @@ const VisualAnalytics = () => {
     }
 
     return (
-      <ResponsiveContainer width="100%" height={350}>
-        <FunnelChart>
+      <ResponsiveContainer width="100%" height={450}>
+        <FunnelChart margin={{ top: 20, right: 40, left: 40, bottom: 20 }}>
           <Tooltip
             contentStyle={{
               backgroundColor: "hsl(var(--card))",
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px",
             }}
+            formatter={(value: any) => [Number(value).toLocaleString(), valueField]}
           />
           <Funnel dataKey="value" data={funnelData} isAnimationActive>
-            <LabelList position="center" fill="#fff" stroke="none" dataKey="name" />
+            <LabelList 
+              position="center" 
+              fill="#fff" 
+              stroke="none" 
+              dataKey="name"
+              style={{ fontSize: 12, fontWeight: 600 }}
+            />
           </Funnel>
         </FunnelChart>
       </ResponsiveContainer>
@@ -970,27 +1092,27 @@ const VisualAnalytics = () => {
     const percentage = Math.min(100, Math.round((mean / max) * 100));
 
     return (
-      <div className="h-80 flex flex-col items-center justify-center gap-6">
+      <div className="min-h-[450px] flex flex-col items-center justify-center gap-8 py-6">
         <GaugeChart
           value={percentage}
           maxValue={100}
-          label={`${selectedYField} Performance`}
+          label={selectedYField.length > 25 ? selectedYField.substring(0, 22) + '...' : selectedYField}
           unit="%"
           size="lg"
           thresholds={{ low: 33, mid: 66 }}
         />
-        <div className="grid grid-cols-3 gap-8 text-center">
-          <div>
-            <p className="text-2xl font-bold text-primary">{stats.mean}</p>
-            <p className="text-xs text-muted-foreground">Average</p>
+        <div className="grid grid-cols-3 gap-8 text-center w-full max-w-md px-4">
+          <div className="p-3 rounded-lg bg-primary/10">
+            <p className="text-2xl font-bold text-primary">{Number(stats.mean).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Average</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-green-500">{stats.max}</p>
-            <p className="text-xs text-muted-foreground">Maximum</p>
+          <div className="p-3 rounded-lg bg-green-500/10">
+            <p className="text-2xl font-bold text-green-500">{Number(stats.max).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Maximum</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-amber-500">{stats.min}</p>
-            <p className="text-xs text-muted-foreground">Minimum</p>
+          <div className="p-3 rounded-lg bg-amber-500/10">
+            <p className="text-2xl font-bold text-amber-500">{Number(stats.min).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">Minimum</p>
           </div>
         </div>
       </div>
@@ -1014,26 +1136,46 @@ const VisualAnalytics = () => {
       );
     }
 
+    const chartData = getChartData();
+    const dataCount = chartData.length;
+    const interval = dataCount > 20 ? Math.floor(dataCount / 10) : dataCount > 10 ? 1 : 0;
+
     return (
-      <ResponsiveContainer width="100%" height={350}>
-        <AreaChart data={getChartData()} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+      <ResponsiveContainer width="100%" height={450}>
+        <AreaChart data={chartData} margin={{ top: 20, right: 40, left: 60, bottom: 100 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis
             dataKey={selectedXField}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
             angle={-45}
             textAnchor="end"
-            height={80}
+            height={90}
+            interval={interval}
+            tickFormatter={(value) => {
+              const str = String(value);
+              return str.length > 15 ? str.substring(0, 12) + '...' : str;
+            }}
           />
-          <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+          <YAxis 
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            width={50}
+            tickFormatter={(value) => Number(value).toLocaleString()}
+          />
           <Tooltip
             contentStyle={{
               backgroundColor: "hsl(var(--card))",
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px",
             }}
+            formatter={(value: any, name: string) => [Number(value).toLocaleString(), name]}
           />
-          <Legend />
+          <Legend 
+            wrapperStyle={{ paddingTop: "20px" }}
+            formatter={(value) => {
+              const str = String(value);
+              return str.length > 20 ? str.substring(0, 17) + '...' : str;
+            }}
+          />
           {numericCols.map((col, index) => (
             <Area
               key={col}
