@@ -75,6 +75,34 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    // Subscription and quota management
+    subscription: {
+      type: String,
+      enum: ['free', 'premium'],
+      default: 'free',
+    },
+    aiQuota: {
+      dailyUsed: {
+        type: Number,
+        default: 0,
+      },
+      monthlyUsed: {
+        type: Number,
+        default: 0,
+      },
+      totalUsed: {
+        type: Number,
+        default: 0,
+      },
+      lastReset: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+    storageUsed: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -94,5 +122,11 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Indexes for better query performance
+userSchema.index({ email: 1 });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ subscription: 1 });
+userSchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('User', userSchema);

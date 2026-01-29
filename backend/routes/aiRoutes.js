@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
+const logger = require('../utils/logger');
 const { indexUserData, indexInsights, chat, clearSessionMemory, clearUserData, debugUserData } = require('../utils/aiService');
 
 // @route   POST /api/ai/index
@@ -85,19 +86,29 @@ router.post('/chat', protect, async (req, res) => {
     const session = sessionId || `session_${Date.now()}`;
 
     console.log(`\n💬 [AI CHAT] Processing query for user: ${userId}`);
+    logger.logAIUsage(userId, query);
 
     const result = await chat(userId, session, query.trim());
+
+    logger.info('AI query completed', {
+      userId,
+      queryLength: query.length,
+      success: result.success,
+      quota: req.aiQuota,
+    });
 
     res.json({
       success: result.success,
       response: result.response,
       sessionId: session,
       source: result.source,
-      calculations: result.calculations
+      calculations: result.calculations,
+      quota: req.aiQuota, // Include quota info in response
     });
 
   } catch (error) {
     console.error('AI Chat error:', error);
+    logger.logError(error, req);
     res.status(500).json({ 
       success: false,
       message: 'Failed to process your question',

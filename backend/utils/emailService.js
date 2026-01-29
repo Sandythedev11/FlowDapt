@@ -4,14 +4,44 @@ const nodemailer = require('nodemailer');
 // GMAIL SMTP EMAIL SERVICE - PRODUCTION READY
 // ============================================
 
+let smtpReady = false;
+let smtpError = null;
+
 // Verify SMTP credentials are present
-if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-  console.error('❌ CRITICAL: SMTP_USER or SMTP_PASS is not set in environment variables');
-  console.error('   Email functionality will not work without valid Gmail SMTP credentials');
-}
+const validateSMTPConfig = () => {
+  const errors = [];
+  
+  if (!process.env.SMTP_USER) {
+    errors.push('SMTP_USER is not set');
+  }
+  
+  if (!process.env.SMTP_PASS) {
+    errors.push('SMTP_PASS is not set');
+  }
+  
+  if (!process.env.SMTP_HOST) {
+    console.warn('⚠️  [SMTP] SMTP_HOST not set, using default: smtp.gmail.com');
+  }
+  
+  if (errors.length > 0) {
+    console.error('\n❌ [SMTP] CRITICAL: Missing SMTP configuration');
+    errors.forEach(err => console.error(`   • ${err}`));
+    console.error('   📧 Email functionality will not work without valid Gmail SMTP credentials\n');
+    console.error('   💡 Required environment variables:');
+    console.error('      SMTP_USER=your-email@gmail.com');
+    console.error('      SMTP_PASS=your-app-password');
+    console.error('      SMTP_HOST=smtp.gmail.com (optional)');
+    console.error('      SMTP_PORT=587 (optional)\n');
+    return false;
+  }
+  
+  return true;
+};
+
+const hasValidSMTPConfig = validateSMTPConfig();
 
 // Create reusable transporter using Gmail SMTP
-const transporter = nodemailer.createTransport({
+const transporter = hasValidSMTPConfig ? nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT) || 587,
   secure: false, // true for 465, false for other ports
@@ -19,16 +49,55 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-});
+}) : null;
 
 // Verify transporter connection on startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ [SMTP] Failed to connect to Gmail SMTP:', error.message);
-  } else {
-    console.log('✅ [SMTP] Gmail SMTP server is ready to send emails');
-  }
-});
+if (transporter) {
+  console.log('\n🔄 [SMTP] Verifying Gmail SMTP connection...');
+  
+  transporter.verify((error, success) => {
+    if (error) {
+      smtpReady = false;
+      smtpError = error.message;
+      console.error('\n❌ [SMTP] Failed to connect to Gmail SMTP');
+      console.error(`   Error: ${error.message}`);
+      
+      if (error.message.includes('Invalid login')) {
+        console.error('\n   💡 Authentication Failed - Possible causes:');
+        console.error('      • Incorrect email or password');
+        console.error('      • Using regular password instead of App Password');
+        console.error('      • 2-Factor Authentication not enabled');
+        console.error('\n   📋 Gmail App Password Setup:');
+        console.error('      1. Enable 2-Factor Authentication on your Google Account');
+        console.error('      2. Go to https://myaccount.google.com/apppasswords');
+        console.error('      3. Generate a new App Password for "Mail"');
+        console.error('      4. Use the 16-character password in SMTP_PASS');
+      } else if (error.message.includes('ENOTFOUND') || error.message.includes('ETIMEDOUT')) {
+        console.error('\n   💡 Network Error - Check your internet connection');
+      }
+      
+      console.error('\n   ⚠️  Email features will be unavailable until this is fixed\n');
+    } else {
+      smtpReady = true;
+      smtpError = null;
+      console.log('✅ [SMTP] Gmail SMTP server is ready to send emails');
+      console.log(`   Host: ${process.env.SMTP_HOST || 'smtp.gmail.com'}`);
+      console.log(`   Port: ${process.env.SMTP_PORT || 587}`);
+      console.log(`   User: ${process.env.SMTP_USER}\n`);
+    }
+  });
+} else {
+  console.error('❌ [SMTP] Transporter not created due to missing configuration\n');
+}
+
+// Get SMTP status
+const getSMTPStatus = () => {
+  return {
+    ready: smtpReady,
+    configured: hasValidSMTPConfig,
+    error: smtpError,
+  };
+};
 
 // Email configuration
 const EMAIL_CONFIG = {
@@ -119,6 +188,29 @@ const getBaseTemplate = (content) => `
 
 const sendEmail = async (to, subject, html, emailType = 'general') => {
   const startTime = Date.now();
+  
+  // Check if SMTP is configured and ready
+  if (!transporter) {
+    const error = 'SMTP not configured - missing credentials';
+    logEmailEvent(emailType, 'error', {
+      to,
+      subject,
+      error,
+      message: 'Email send aborted - SMTP not configured'
+    });
+    return { success: false, error };
+  }
+  
+  if (!smtpReady) {
+    const error = smtpError || 'SMTP connection not ready';
+    logEmailEvent(emailType, 'error', {
+      to,
+      subject,
+      error,
+      message: 'Email send aborted - SMTP not ready'
+    });
+    return { success: false, error };
+  }
   
   logEmailEvent(emailType, 'pending', {
     to,
@@ -610,6 +702,9 @@ module.exports = {
   
   // Config
   EMAIL_CONFIG,
+  
+  // Status checks
+  getSMTPStatus,
   
   // Transporter (for testing)
   transporter,

@@ -58,6 +58,9 @@ const uploadSchema = new mongoose.Schema(
 );
 
 // Index for efficient user queries
-uploadSchema.index({ user: 1 });
+uploadSchema.index({ user: 1, createdAt: -1 });
+uploadSchema.index({ createdAt: -1 });
+uploadSchema.index({ status: 1 });
+uploadSchema.index({ fileType: 1 });
 
 module.exports = mongoose.model('Upload', uploadSchema);

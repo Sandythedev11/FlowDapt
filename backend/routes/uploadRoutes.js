@@ -5,6 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const Upload = require('../models/Upload');
 const { protect } = require('../middleware/auth');
+const { checkStorageQuota } = require('../middleware/aiQuota');
+const logger = require('../utils/logger');
 const {
   parseCSV,
   parseExcel,
@@ -53,11 +55,13 @@ const upload = multer({
 // @route   POST /api/upload
 // @desc    Upload and process file
 // @access  Private
-router.post('/', protect, upload.single('file'), async (req, res) => {
+router.post('/', protect, upload.single('file'), checkStorageQuota, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'Please upload a file' });
     }
+
+    logger.logFileOperation('upload', req.user._id, req.file.originalname, req.file.size);
 
     const fileType = path.extname(req.file.originalname).toLowerCase().slice(1);
     let parsedData;
@@ -101,14 +105,27 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
       uploadRecord.status = 'completed';
       await uploadRecord.save();
 
+      logger.info('File processed successfully', {
+        userId: req.user._id,
+        fileName: req.file.originalname,
+        fileType,
+      });
+
       res.status(201).json({
         message: 'File uploaded and processed successfully',
         upload: uploadRecord,
+        storageQuota: req.storageQuota,
       });
     } catch (parseError) {
       uploadRecord.status = 'failed';
       uploadRecord.errorMessage = parseError.message;
       await uploadRecord.save();
+      
+      logger.error('File processing failed', {
+        userId: req.user._id,
+        fileName: req.file.originalname,
+        error: parseError.message,
+      });
       
       res.status(500).json({
         message: 'File uploaded but processing failed',
@@ -116,6 +133,7 @@ router.post('/', protect, upload.single('file'), async (req, res) => {
       });
     }
   } catch (error) {
+    logger.logError(error, req);
     res.status(500).json({ message: error.message });
   }
 });
