@@ -82,8 +82,16 @@ const corsOptions = {
   origin: process.env.FRONTEND_URL || '*',
   credentials: true,
   optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
+
+// Log CORS configuration for debugging
+console.log('🔐 [CORS] Configuration:', {
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true,
+});
 
 // Data sanitization against NoSQL injection
 app.use(mongoSanitize());
