@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_ENDPOINTS, getAuthHeaders } from "@/config/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,11 +57,9 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
           password,
@@ -145,11 +144,9 @@ const Login = () => {
     setIsReactivating(true);
     
     try {
-      const response = await fetch('http://localhost:5000/api/auth/reactivate-account', {
+      const response = await fetch(API_ENDPOINTS.AUTH.REACTIVATE_ACCOUNT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           email: deactivatedEmail,
           password,

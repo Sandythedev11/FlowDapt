@@ -21,6 +21,7 @@ import { runFullAnalysis, storeAnalysisResults, type AnalysisData, type Analytic
 import { DataPreviewModal } from "@/components/dashboard/DataPreviewModal";
 import { SHORTCUTS } from "@/hooks/useKeyboardShortcuts";
 import { setUserItem, STORAGE_KEYS } from "@/lib/userStorage";
+import { API_ENDPOINTS } from "@/config/api";
 
 // Index data for AI analysis (limit to 500 rows to prevent payload issues)
 const indexDataForAI = async (data: AnalysisData, analyticsRes: AnalyticsResult) => {
@@ -34,7 +35,7 @@ const indexDataForAI = async (data: AnalysisData, analyticsRes: AnalyticsResult)
 
     console.log(`📤 Indexing for AI: ${dataToSend.length}/${totalRows} rows`);
 
-    const response = await fetch("http://localhost:5000/api/ai/index", {
+    const response = await fetch(API_ENDPOINTS.AI.INDEX, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { loadAnalysisData, loadAnalysisResults } from "@/lib/analyticsEngine";
 import { setUserItem, STORAGE_KEYS } from "@/lib/userStorage";
+import { API_ENDPOINTS } from "@/config/api";
 
 interface Message {
   id: string;
@@ -68,7 +69,7 @@ export function AIChatBox({ hasData }: AIChatBoxProps) {
     console.log(`🔄 Re-indexing FULL dataset for AI... (${dataToSend.length}/${totalRows} rows, ${analysisData.fields?.length} columns)`);
 
     try {
-      const response = await fetch("http://localhost:5000/api/ai/index", {
+      const response = await fetch(API_ENDPOINTS.AI.INDEX, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -183,7 +184,7 @@ export function AIChatBox({ hasData }: AIChatBoxProps) {
       console.log("🤖 [AI Chat] Sending query:", userMessage.content);
       console.log("🤖 [AI Chat] Token present:", !!token);
       
-      const response = await fetch("http://localhost:5000/api/ai/chat", {
+      const response = await fetch(API_ENDPOINTS.AI.CHAT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -226,7 +227,7 @@ export function AIChatBox({ hasData }: AIChatBoxProps) {
   const clearChat = async () => {
     try {
       const token = localStorage.getItem("token");
-      await fetch("http://localhost:5000/api/ai/clear-session", {
+      await fetch(API_ENDPOINTS.AI.CLEAR_SESSION, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

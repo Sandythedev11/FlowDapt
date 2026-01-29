@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MessageSquare, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { API_ENDPOINTS } from "@/config/api";
 
 const Feedback = () => {
   const [feedback, setFeedback] = useState("");
@@ -29,7 +30,7 @@ const Feedback = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/feedback/submit", {
+      const response = await fetch(API_ENDPOINTS.FEEDBACK.SUBMIT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

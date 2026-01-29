@@ -2,6 +2,8 @@
 // Session-based storage: Analytics data persists during session (survives refresh)
 // Data is automatically cleared when tab/browser closes (sessionStorage behavior)
 
+import { API_ENDPOINTS } from "@/config/api";
+
 // Session ID for current browser session
 let currentSessionId: string | null = null;
 
@@ -189,7 +191,7 @@ export const clearServerSessionData = async (): Promise<void> => {
 
   try {
     // Clear AI data on server
-    await fetch("http://localhost:5000/api/ai/clear-all", {
+    await fetch(API_ENDPOINTS.AI.CLEAR_ALL, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -197,7 +199,7 @@ export const clearServerSessionData = async (): Promise<void> => {
     });
 
     // Clear upload data on server
-    await fetch("http://localhost:5000/api/upload/session/clear", {
+    await fetch(API_ENDPOINTS.UPLOAD.SESSION_CLEAR, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,

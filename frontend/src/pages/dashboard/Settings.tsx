@@ -48,6 +48,7 @@ import {
   Plus
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import { API_ENDPOINTS } from "@/config/api";
 import { toast } from "sonner";
 
 const Settings = () => {
@@ -104,7 +105,7 @@ const Settings = () => {
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/me", {
+      const response = await fetch(API_ENDPOINTS.AUTH.ME, {
         headers: { "Authorization": `Bearer ${token}` },
       });
       if (response.ok) {
@@ -134,7 +135,7 @@ const Settings = () => {
     setIsSavingName(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/update-profile", {
+      const response = await fetch(API_ENDPOINTS.AUTH.UPDATE_PROFILE, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -170,7 +171,7 @@ const Settings = () => {
     setIsAddingRecovery(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/add-recovery-email", {
+      const response = await fetch(API_ENDPOINTS.AUTH.ADD_RECOVERY_EMAIL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -204,7 +205,7 @@ const Settings = () => {
     setIsVerifyingRecovery(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/verify-recovery-email", {
+      const response = await fetch(API_ENDPOINTS.AUTH.VERIFY_RECOVERY_EMAIL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -235,7 +236,7 @@ const Settings = () => {
   const handleRemoveRecoveryEmail = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/remove-recovery-email", {
+      const response = await fetch(API_ENDPOINTS.AUTH.REMOVE_RECOVERY_EMAIL, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` },
       });
@@ -294,7 +295,7 @@ const Settings = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/deactivate-account", {
+      const response = await fetch(API_ENDPOINTS.AUTH.DEACTIVATE_ACCOUNT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -328,7 +329,7 @@ const Settings = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/auth/delete-account", {
+      const response = await fetch(API_ENDPOINTS.AUTH.DELETE_ACCOUNT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

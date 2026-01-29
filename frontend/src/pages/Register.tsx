@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_ENDPOINTS, getAuthHeaders } from "@/config/api";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -77,11 +78,9 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),

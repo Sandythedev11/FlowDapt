@@ -58,6 +58,7 @@ import * as XLSX from "xlsx";
 import { loadAnalysisResults, loadAnalysisData, storeAnalysisResults, runFullAnalysis, type AnalyticsResult, type AnalysisData as EngineAnalysisData } from "@/lib/analyticsEngine";
 import { removeUserItem, STORAGE_KEYS } from "@/lib/userStorage";
 import { initReportQueue, addChartToReport, getReportChartCount, clearReportQueue } from "@/lib/reportBuilder";
+import { API_ENDPOINTS } from "@/config/api";
 
 interface AnalysisData {
   fileName: string;
@@ -112,7 +113,7 @@ const VisualAnalytics = () => {
         correlationsCount: analyticsRes?.correlations?.length || 0
       });
 
-      const response = await fetch("http://localhost:5000/api/ai/index", {
+      const response = await fetch(API_ENDPOINTS.AI.INDEX, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

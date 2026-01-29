@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Mail, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_ENDPOINTS, getAuthHeaders } from "@/config/api";
 
 const VerifyEmail = () => {
   const [otp, setOtp] = useState("");
@@ -71,11 +72,9 @@ const VerifyEmail = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/verify-email', {
+      const response = await fetch(API_ENDPOINTS.AUTH.VERIFY_EMAIL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           email,
           otp,
@@ -125,11 +124,9 @@ const VerifyEmail = () => {
     setIsResending(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/resend-verification', {
+      const response = await fetch(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ email }),
       });
 
